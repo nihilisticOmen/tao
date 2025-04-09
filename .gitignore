@@ -1,0 +1,15 @@
+# 忽略所有 .log 文件
+*.log
+
+# 忽略所有 .md 文件，但不忽略 README.md
+*.md
+!README.md
+
+# 忽略所有以 temp 开头的文件和文件夹
+temp*
+
+# 忽略所有以 .bak 结尾的文件
+*.bak
+
+# 忽略.idea文件夹
+.idea/
