@@ -14,3 +14,6 @@ temp*
 # 忽略.idea文件夹
 .idea/
 
+# 忽略.sum文件
+*.sum
+

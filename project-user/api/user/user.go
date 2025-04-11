@@ -2,13 +2,13 @@ package user
 
 import (
 	"github.com/gin-gonic/gin"
+	common "test.com/project-common"
 )
 
 type HandlerUser struct {
 }
 
 func (*HandlerUser) getCaptcha(c *gin.Context) {
-	c.JSON(200, gin.H{
-		"message": "User route",
-	})
+	rsp := &common.Result{}
+	c.JSON(200, rsp.Success("123456"))
 }
