@@ -1,3 +1,6 @@
 go 1.24.1
 
-use ./project-user
+use (
+	./project-common
+	./project-user
+)
