@@ -2,9 +2,9 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
+	srv "tao.com/project-common"
 	_ "tao.com/project-user/api"
 	"tao.com/project-user/router"
-	srv "test.com/project-common"
 )
 
 func main() {

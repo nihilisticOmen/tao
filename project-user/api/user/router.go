@@ -16,6 +16,6 @@ func init() {
 }
 func (*RouterUser) Router(r *gin.Engine) {
 	// User routes
-	h := &HandlerUser{}
+	h := New()
 	r.POST("/project/login/getCaptcha", h.getCaptcha)
 }

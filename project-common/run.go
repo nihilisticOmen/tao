@@ -32,7 +32,7 @@ func Run(r *gin.Engine, srvName string, addr string) {
 	<-quit
 
 	log.Printf("Shutting Down project %s ...\n", srvName)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Fatalf("%s Shutdown, cause by : %v", srvName, err)
