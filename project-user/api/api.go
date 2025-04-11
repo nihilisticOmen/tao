@@ -1,5 +1,5 @@
 package api
 
 import (
-	_ "tao.com/project-user/api/user"
+	_ "project-user/api/user"
 )

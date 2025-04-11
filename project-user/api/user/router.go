@@ -3,7 +3,7 @@ package user
 import (
 	"github.com/gin-gonic/gin"
 	"log"
-	"tao.com/project-user/router"
+	"project-user/router"
 )
 
 type RouterUser struct {

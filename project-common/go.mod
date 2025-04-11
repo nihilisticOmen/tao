@@ -1,4 +1,4 @@
-module tao.com/project-common
+module project-common
 
 go 1.24
 

@@ -6,10 +6,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
-	common "tao.com/project-common"
-	"tao.com/project-user/pkg/dao"
-	"tao.com/project-user/pkg/model"
-	"tao.com/project-user/pkg/repo"
+	common "project-common"
+	"project-user/pkg/dao"
+	"project-user/pkg/model"
+	"project-user/pkg/repo"
 	"time"
 )
 

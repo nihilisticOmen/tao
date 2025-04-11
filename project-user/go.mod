@@ -1,4 +1,4 @@
-module tao.com/project-user
+module project-user
 
 go 1.24.1
 
@@ -6,7 +6,6 @@ require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/stretchr/testify v1.9.0
-	tao.com/project-common v0.0.0-00010101000000-000000000000
 )
 
 require (
@@ -42,4 +41,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace tao.com/project-common => ../project-common
+//replace tao.com/project-common => ../project-common
