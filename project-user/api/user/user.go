@@ -2,11 +2,12 @@ package user
 
 import (
 	"context"
-	"fmt"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"log"
 	"net/http"
 	common "project-common"
+	"project-common/logs"
 	"project-user/pkg/dao"
 	"project-user/pkg/model"
 	"project-user/pkg/repo"
@@ -37,7 +38,9 @@ func (*HandlerUser) getCaptcha(ctx *gin.Context) {
 	//4.调用短信平台
 	go func() {
 		time.Sleep(2 * time.Second)
-		log.Println("调用短信平台发送短信")
+		zap.L().Info("调用短信平台发送短信 info")
+		logs.LG.Debug("调用短信平台发送短信 debug")
+		zap.L().Error("调用短信平台发送短信 error")
 		//5.存储验证码到redis,设置过期时间15min
 		c, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
@@ -46,7 +49,6 @@ func (*HandlerUser) getCaptcha(ctx *gin.Context) {
 			log.Println("存储验证码失败:", err)
 			return
 		}
-		fmt.Println(mobile, code)
 	}()
 
 	ctx.JSON(http.StatusOK, rsp.Success("123456"))

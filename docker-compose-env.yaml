@@ -1,14 +1,15 @@
 version: '3'
 services:
   redis:
-    image: redis
+    image: redis:7.2
     container_name: my-redis
     environment:
-      - REDIS_PASSWORD=""
       - REDIS_APPENDONLY=yes
-      - REDIS_MAXMEMORY=100mb
+      - REDIS_APPEND_FSYNC=everysec
     volumes:
-      - /app/redis/data:/data
+      - ./data:/data
+      - ./conf/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
     ports:
       - "6379:6379"
     restart: unless-stopped
