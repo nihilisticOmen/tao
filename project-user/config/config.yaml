@@ -1,4 +1,6 @@
-
+server:
+  name: "project-user"
+  addr: "127.0.0.1:80"
 zap:
   debugFileName: "D:\\go\\project\\project_ws\\logs\\debug\\project-debug.log"
   infoFileName: "D:\\go\\project\\project_ws\\logs\\info\\project-info.log"
@@ -11,3 +13,6 @@ redis:
   port: 6379
   password: ""
   db: 0
+grpc:
+  addr: "127.0.0.1:8881"
+  name: "user"

@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func Run(r *gin.Engine, srvName string, addr string) {
+func Run(r *gin.Engine, srvName string, addr string, stop func()) {
 	srv := &http.Server{
 		Addr:    addr,
 		Handler: r,
@@ -34,6 +34,9 @@ func Run(r *gin.Engine, srvName string, addr string) {
 	log.Printf("Shutting Down project %s ...\n", srvName)
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
+	if stop != nil {
+		stop()
+	}
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Fatalf("%s Shutdown, cause by : %v", srvName, err)
 	}

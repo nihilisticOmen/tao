@@ -2,6 +2,11 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
+	"google.golang.org/grpc"
+	"log"
+	"net"
+	"project-user/config"
+	loginServiceV1 "project-user/pkg/service/login.service.v1"
 )
 
 type Router interface {
@@ -29,4 +34,31 @@ func InitRouter(r *gin.Engine) {
 }
 func Register(ro ...Router) {
 	routers = append(routers, ro...)
+}
+
+type gRPCConfig struct {
+	Addr         string
+	RegisterFunc func(*grpc.Server)
+}
+
+func RegisterGrpc() *grpc.Server {
+	c := gRPCConfig{
+		Addr: config.AppConf.GC.Addr,
+		RegisterFunc: func(g *grpc.Server) {
+			loginServiceV1.RegisterLoginServiceServer(g, loginServiceV1.New())
+		}}
+	s := grpc.NewServer()
+	c.RegisterFunc(s)
+	lis, err := net.Listen("tcp", config.AppConf.GC.Addr)
+	if err != nil {
+		log.Println("cannot listen")
+	}
+	go func() {
+		err = s.Serve(lis)
+		if err != nil {
+			log.Println("server started error", err)
+			return
+		}
+	}()
+	return s
 }
