@@ -31,6 +31,7 @@ func InitConfig() *Config {
 	}
 	conf.ReadServerConfig()
 	conf.ReadGrpcConfig()
+	conf.InitZapLog()
 	return conf
 }
 
