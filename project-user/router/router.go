@@ -47,7 +47,9 @@ func RegisterGrpc() *grpc.Server {
 		RegisterFunc: func(g *grpc.Server) {
 			loginServiceV1.RegisterLoginServiceServer(g, loginServiceV1.New())
 		}}
+	// 创建grpc服务
 	s := grpc.NewServer()
+	// 注册服务
 	c.RegisterFunc(s)
 	lis, err := net.Listen("tcp", config.AppConf.GC.Addr)
 	if err != nil {

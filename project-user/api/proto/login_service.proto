@@ -7,6 +7,7 @@ message CaptchaMessage {
   string mobile = 1;
 }
 message CaptchaResponse{
+  string code = 1;
 }
 service LoginService {
   rpc GetCaptcha(CaptchaMessage) returns (CaptchaResponse) {}

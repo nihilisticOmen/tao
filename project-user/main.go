@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	srv "project-common"
-	_ "project-user/api"
 	"project-user/config"
 	"project-user/router"
 )

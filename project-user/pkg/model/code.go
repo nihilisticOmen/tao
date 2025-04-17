@@ -1,7 +1,9 @@
 package model
 
-import common "project-common"
+import (
+	"project-common/errs"
+)
 
-const (
-	NoLegalMobile common.BusinessCode = 2001 // 手机号不合法
+var (
+	NoLegalMobile = errs.NewError(2001, "手机号不合法") // 手机号不合法
 )
