@@ -5,27 +5,57 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - ./data/redis:/data  #    持久化 Redis 数据
+      - ./conf/redis/redis.conf:/etc/redis/redis.conf  #    Redis 配置文件
+      - ./data/redis:/data                        #    持久化 Redis 数据
     networks:
       - tao_net
     restart: unless-stopped
-
+    command: redis-server /etc/redis/redis.conf
   etcd:
     image: bitnami/etcd:3.5.9
     container_name: tao_etcd
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
     environment:
       - ALLOW_NONE_AUTHENTICATION=yes
-      - ETCD_NAME=etcd01
       - ETCD_ADVERTISE_CLIENT_URLS=http://0.0.0.0:2379
       - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379
     ports:
-      - "2379:2379"
+      - "2379:2379"f
       - "2380:2380"
     volumes:
-      - ./data/etcd:/data
+      - ./data/etcd:/bitnami/etcd/data
     networks:
       - tao_net
     restart: unless-stopped
+  mysql:
+    container_name: tao_mysql
+    image: mysql:8.0.20
+    ports:
+      - "3306:3306"
+    environment:
+      TZ: Asia/Shanghai
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: msproject
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+      - ./conf/mysql:/etc/mysql/conf.d/
+      - ./logs/mysql:/logs
+    restart: unless-stopped
+    command:
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_general_ci
+      --explicit_defaults_for_timestamp=true
+      --lower_case_table_names=1
+  Project-User:
+    container_name: project-user
+    image: project-user:latest
+    ports:
+      - 8080:8080
+      - 8881:8881
 
 networks:
   tao_net:

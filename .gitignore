@@ -21,3 +21,5 @@ temp*
 .logs/
 *.exe
 /project-user/pkg/dao/config/
+/project-api/target/project-api
+/project-user/target/project-user

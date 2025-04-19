@@ -1,0 +1,23 @@
+server:
+  name: "project-user"
+  addr: "127.0.0.1:8080"
+zap:
+  debugFileName: "/logs/msProject/debug/project-debug.log"
+  infoFileName:  "/logs/msProject/info/project-info.log"
+  warnFileName:  "/logs/msProject/error/project-error.log"
+  maxSize: 500,
+  maxAge: 28,
+  MaxBackups: 3
+redis:
+  host: "tao_redis"
+  port: 6379
+  password: ""
+  db: 0
+grpc:
+  addr: "0.0.0.0:8881"
+  name: "user"
+  version: "1.0.0"
+  weight: 2
+etcd:
+  addrs:
+    - "tao_etcd:2379"
