@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/go-redis/redis/v8"
+	"log"
 	"project-user/config"
 	"time"
 )
@@ -15,9 +16,10 @@ type RedisCache struct {
 }
 
 func init() {
-	rdb := redis.NewClient(config.AppConf.InitRedisOptions())
+	log.Println("init redis cache")
+	rediscClient := redis.NewClient(config.AppConf.InitRedisOptions())
 	Rc = &RedisCache{
-		rdb: rdb,
+		rdb: rediscClient,
 	}
 }
 func (rc *RedisCache) Put(ctx context.Context, key, value string, expire time.Duration) error {

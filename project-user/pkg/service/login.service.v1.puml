@@ -1,0 +1,72 @@
+@startuml
+namespace login_service_v1 {
+    class CaptchaMessage << (S,Aquamarine) >> {
+        - state protoimpl.MessageState
+        - sizeCache protoimpl.SizeCache
+        - unknownFields protoimpl.UnknownFields
+
+        + Mobile string
+
+        + Reset() 
+        + String() string
+        + ProtoMessage() 
+        + ProtoReflect() protoreflect.Message
+        + Descriptor() ([]byte, []int)
+        + GetMobile() string
+
+    }
+    class CaptchaResponse << (S,Aquamarine) >> {
+        - state protoimpl.MessageState
+        - sizeCache protoimpl.SizeCache
+        - unknownFields protoimpl.UnknownFields
+
+        + Code string
+
+        + Reset() 
+        + String() string
+        + ProtoMessage() 
+        + ProtoReflect() protoreflect.Message
+        + Descriptor() ([]byte, []int)
+        + GetCode() string
+
+    }
+    class LoginService << (S,Aquamarine) >> {
+        + Cache repo.Cache
+
+        + GetCaptcha(ctx context.Context, msg *CaptchaMessage) (*CaptchaResponse, error)
+
+    }
+    interface LoginServiceClient  {
+        + GetCaptcha(ctx context.Context, in *CaptchaMessage, opts ...grpc.CallOption) (*CaptchaResponse, error)
+
+    }
+    interface LoginServiceServer  {
+        - mustEmbedUnimplementedLoginServiceServer() 
+
+        + GetCaptcha( context.Context,  *CaptchaMessage) (*CaptchaResponse, error)
+
+    }
+    class UnimplementedLoginServiceServer << (S,Aquamarine) >> {
+        - mustEmbedUnimplementedLoginServiceServer() 
+
+        + GetCaptcha( context.Context,  *CaptchaMessage) (*CaptchaResponse, error)
+
+    }
+    interface UnsafeLoginServiceServer  {
+        - mustEmbedUnimplementedLoginServiceServer() 
+
+    }
+    class loginServiceClient << (S,Aquamarine) >> {
+        - cc grpc.ClientConnInterface
+
+        + GetCaptcha(ctx context.Context, in *CaptchaMessage, opts ...grpc.CallOption) (*CaptchaResponse, error)
+
+    }
+}
+"login_service_v1.UnimplementedLoginServiceServer" *-- "login_service_v1.LoginService"
+
+"login_service_v1.LoginServiceServer" <|-- "login_service_v1.UnimplementedLoginServiceServer"
+"login_service_v1.UnsafeLoginServiceServer" <|-- "login_service_v1.UnimplementedLoginServiceServer"
+"login_service_v1.LoginServiceClient" <|-- "login_service_v1.loginServiceClient"
+
+@enduml

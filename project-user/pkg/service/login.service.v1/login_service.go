@@ -3,7 +3,6 @@ package login_service_v1
 import (
 	"context"
 	"go.uber.org/zap"
-	"log"
 	common "project-common"
 	"project-common/errs"
 	"project-user/pkg/dao"
@@ -24,6 +23,7 @@ func New() *LoginService {
 }
 
 func (ls *LoginService) GetCaptcha(ctx context.Context, msg *CaptchaMessage) (*CaptchaResponse, error) {
+	zap.L().Info("调用验证码服务")
 	//1. 获取参数
 	mobile := msg.Mobile
 	//2. 验证手机合法性
@@ -35,16 +35,14 @@ func (ls *LoginService) GetCaptcha(ctx context.Context, msg *CaptchaMessage) (*C
 	//4. 发送验证码
 	go func() {
 		time.Sleep(2 * time.Second)
-		zap.L().Info("调用短信平台发送短信")
-		zap.L().Debug("调用短信平台发送短信debug")
-		zap.L().Warn("调用短信平台发送短信warn")
-		zap.L().Error("调用短信平台发送短信error")
 		//发送成功 存入redis
-		err := ls.Cache.Put(ctx, "REGISTER_"+mobile, code, 15*time.Minute)
+		timeControl, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		err := ls.Cache.Put(timeControl, "REGISTER_"+mobile, code, 15*time.Minute)
 		if err != nil {
-			log.Println("验证码存入redis发生错误，cause by :", err)
+			zap.L().Error("存储验证码失败")
 		}
-		log.Println("发送短信成功")
+		zap.L().Info("存储验证码成功")
 	}()
 	return &CaptchaResponse{Code: code}, nil
 }

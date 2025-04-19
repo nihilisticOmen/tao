@@ -1,15 +1,32 @@
-version: '3'
 services:
   redis:
     image: redis:7.2
-    container_name: my-redis
-    environment:
-      - REDIS_APPENDONLY=yes
-      - REDIS_APPEND_FSYNC=everysec
-    volumes:
-      - ./data:/data
-      - ./conf/redis.conf:/usr/local/etc/redis/redis.conf
-    command: redis-server /usr/local/etc/redis/redis.conf
+    container_name: tao_redis
     ports:
       - "6379:6379"
+    volumes:
+      - ./data/redis:/data  #    持久化 Redis 数据
+    networks:
+      - tao_net
     restart: unless-stopped
+
+  etcd:
+    image: bitnami/etcd:3.5.9
+    container_name: tao_etcd
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_NAME=etcd01
+      - ETCD_ADVERTISE_CLIENT_URLS=http://0.0.0.0:2379
+      - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379
+    ports:
+      - "2379:2379"
+      - "2380:2380"
+    volumes:
+      - ./data/etcd:/data
+    networks:
+      - tao_net
+    restart: unless-stopped
+
+networks:
+  tao_net:
+    driver: bridge

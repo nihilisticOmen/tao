@@ -3,7 +3,7 @@ package dao
 import (
 	"context"
 	"github.com/go-redis/redis/v8"
-	"log"
+	"go.uber.org/zap"
 	"testing"
 	"time"
 
@@ -26,7 +26,7 @@ func TestRedisCache_Put(t *testing.T) {
 		// 验证数据存在
 		val, _ := Rc.rdb.Get(ctx, "test_key").Result()
 		assert.Equal(t, "test_value", val)
-		log.Println("测试数据已设置:-------as", val)
+		zap.L().Info("测试数据已设置:-------as" + val)
 		// 清理测试数据
 		//Rc.rdb.Del(ctx, "test_key")
 	})
@@ -59,10 +59,10 @@ func TestRedisCache_Get(t *testing.T) {
 		Rc.rdb.Set(ctx, "exist_key", "exist_value", 0)
 		val, err := Rc.Get(ctx, "exist_key")
 		if err != nil {
-			log.Println("获取键值失败:", err)
+			zap.L().Error("获取键值失败:", zap.Error(err))
 			return
 		}
-		log.Println("------!!!" + val + "--")
+		zap.L().Info("------!!!" + val + "--")
 		assert.NoError(t, err)
 		assert.Equal(t, "exist_value", val)
 	})
@@ -89,7 +89,10 @@ func TestRedisConnection(t *testing.T) {
 		pong, err := Rc.rdb.Ping(ctx).Result()
 		assert.NoError(t, err, "连接应成功")
 		assert.Equal(t, "PONG", pong, "应返回PONG响应")
-
+		// 如果连接成功，打印信息
+		if err == nil && pong == "PONG" {
+			zap.L().Info("连接成功redis")
+		}
 		// 验证连接配置参数
 		opt := Rc.rdb.Options()
 		assert.Equal(t, "localhost:6379", opt.Addr, "地址配置验证")
@@ -121,15 +124,6 @@ func TestRedisConnection(t *testing.T) {
 	})
 }
 func TestMain(m *testing.M) {
-	// 测试前初始化连接
-	ctx := context.Background()
-
-	// 清空测试数据库
-	Rc.rdb.FlushDB(ctx)
-
 	// 执行测试
 	m.Run()
-
-	// 测试后清理
-	Rc.rdb.FlushDB(ctx)
 }

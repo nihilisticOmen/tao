@@ -3,8 +3,11 @@ package router
 import (
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/resolver"
 	"log"
 	"net"
+	"project-common/discovery"
+	"project-common/logs"
 	"project-user/config"
 	loginServiceV1 "project-user/pkg/service/login.service.v1"
 )
@@ -63,4 +66,20 @@ func RegisterGrpc() *grpc.Server {
 		}
 	}()
 	return s
+}
+
+func RegisterEtcdServer() {
+	etcdRegister := discovery.NewResolver(config.AppConf.EtcdConfig.Addrs, logs.LG)
+	resolver.Register(etcdRegister)
+	info := discovery.Server{
+		Name:    config.AppConf.GC.Name,
+		Addr:    config.AppConf.GC.Addr,
+		Version: config.AppConf.GC.Version,
+		Weight:  config.AppConf.GC.Weight,
+	}
+	r := discovery.NewRegister(config.AppConf.EtcdConfig.Addrs, logs.LG)
+	_, err := r.Register(info, 2)
+	if err != nil {
+		log.Fatalln(err)
+	}
 }

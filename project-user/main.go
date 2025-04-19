@@ -13,7 +13,8 @@ func main() {
 	stop := func() {
 		gc.Stop()
 	}
+	router.RegisterEtcdServer()
 	// Initialize the router
-	router.InitRouter(r)
+	//router.InitRouter(r)
 	srv.Run(r, config.AppConf.SC.Name, config.AppConf.SC.Addr, stop)
 }

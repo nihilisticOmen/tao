@@ -11,8 +11,9 @@ import (
 var AppConf = InitConfig()
 
 type Config struct {
-	viper *viper.Viper
-	SC    *ServerConfig
+	viper      *viper.Viper
+	SC         *ServerConfig
+	EtcdConfig *EtcdConfig
 }
 
 func InitConfig() *Config {
@@ -30,6 +31,7 @@ func InitConfig() *Config {
 	}
 	conf.ReadServerConfig()
 	conf.InitZapLog()
+	conf.ReadEtcdConfig()
 	return conf
 }
 
@@ -67,4 +69,19 @@ func (c *Config) InitRedisOptions() *redis.Options {
 		Password: c.viper.GetString("redis.password"), // no password set
 		DB:       c.viper.GetInt("db"),                // use default DB
 	}
+}
+
+type EtcdConfig struct {
+	Addrs []string
+}
+
+func (c *Config) ReadEtcdConfig() {
+	ec := &EtcdConfig{}
+	var addrs []string
+	err := c.viper.UnmarshalKey("etcd.addrs", &addrs)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	ec.Addrs = addrs
+	c.EtcdConfig = ec
 }
