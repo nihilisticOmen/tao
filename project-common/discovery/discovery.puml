@@ -1,0 +1,59 @@
+@startuml
+namespace discovery {
+    class Register << (S,Aquamarine) >> {
+        - closeCh <font color=blue>chan</font> <font color=blue>struct</font>{}
+        - leasesID v3.LeaseID
+        - keepAliveCh <font color=blue>chan</font> *v3.LeaseKeepAliveResponse
+        - srvInfo Server
+        - srvTTL int64
+        - cli *v3.Client
+        - logger *zap.Logger
+
+        + EtcdAddrs []string
+        + DialTimeout int
+
+        - register() error
+        - unregister() error
+        - keepAlive() 
+
+        + Register(srvInfo Server, ttl int64) (<font color=blue>chan</font> <font color=blue>struct</font>{}, error)
+        + Stop() 
+        + UpdateHandler() http.HandlerFunc
+        + GetServerInfo() (Server, error)
+
+    }
+    class Resolver << (S,Aquamarine) >> {
+        - schema string
+        - closeCh <font color=blue>chan</font> <font color=blue>struct</font>{}
+        - watchCh v3.WatchChan
+        - cli *v3.Client
+        - keyPrifix string
+        - srvAddrsList []resolver.Address
+        - cc resolver.ClientConn
+        - logger *zap.Logger
+
+        + EtcdAddrs []string
+        + DialTimeout int
+
+        - start() (<font color=blue>chan</font> <font color=blue>struct</font>{}, error)
+        - watch() 
+        - update(events []*v3.Event) 
+        - sync() error
+
+        + Scheme() string
+        + Build(target resolver.Target, cc resolver.ClientConn, opts resolver.BuildOptions) (resolver.Resolver, error)
+        + ResolveNow(o resolver.ResolveNowOptions) 
+        + Close() 
+
+    }
+    class Server << (S,Aquamarine) >> {
+        + Name string
+        + Addr string
+        + Version string
+        + Weight int64
+
+    }
+}
+
+
+@enduml

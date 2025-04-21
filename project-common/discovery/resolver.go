@@ -9,10 +9,14 @@ import (
 	"time"
 )
 
+// 其中 Builder（ Build Scheme ） 接口用来创建 Resolver，可以提供自己的服务发现实现逻辑，
+// 然后将其注册到 gRPC 中，其中通过 scheme 来标识，而 Resolver 接口则是提供服务发现功能。
+// 当 Resolver 发现服务列表发生变更时，会通过 ClientConn 回调接口通知上层。
 const (
 	schema = "etcd"
 )
 
+// Resolver 功能：实现gRPC客户端解析器，监听etcd服务变化并动态更新服务地址列表。
 // Resolver for grpc client
 type Resolver struct {
 	schema      string
@@ -45,6 +49,8 @@ func (r *Resolver) Scheme() string {
 }
 
 // Build creates a new resolver.Resolver for the given target
+// Build() 参数中的 cc ClientConn，提供了 Builder 和 ClientConn 交互的纽带，
+// 可以调用 cc.UpdateState(resolver.State{Addresses: addrList}) 来向 ClientConn 即时发送服务器列表的更新。
 func (r *Resolver) Build(target resolver.Target, cc resolver.ClientConn, opts resolver.BuildOptions) (resolver.Resolver, error) {
 	r.cc = cc
 
@@ -86,7 +92,7 @@ func (r *Resolver) start() (chan<- struct{}, error) {
 	return r.closeCh, nil
 }
 
-// watch update events
+// watch update events 监听etcd的keyPrifix下的变更事件（PUT/DELETE）。
 func (r *Resolver) watch() {
 	ticker := time.NewTicker(time.Minute)
 	r.watchCh = r.cli.Watch(context.Background(), r.keyPrifix, clientv3.WithPrefix())
@@ -107,7 +113,7 @@ func (r *Resolver) watch() {
 	}
 }
 
-// update
+// update 根据事件类型更新本地地址列表，并通过cc.UpdateState通知gRPC客户端。
 func (r *Resolver) update(events []*clientv3.Event) {
 	for _, ev := range events {
 		var info Server
@@ -138,7 +144,8 @@ func (r *Resolver) update(events []*clientv3.Event) {
 	}
 }
 
-// sync 同步获取所有地址信息
+// sync 同步获取所有地址信息,从etcd拉取当前所有服务地址，更新到srvAddrsList。
+// 触发gRPC的UpdateState通知客户端地址变化。
 func (r *Resolver) sync() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()

@@ -20,6 +20,6 @@ temp*
 # 忽略日志文件
 .logs/
 *.exe
-/project-user/pkg/dao/config/
+/project-user/internal/dao/config/
 /project-api/target/project-api
 /project-user/target/project-user

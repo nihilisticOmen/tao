@@ -9,10 +9,10 @@ import (
 	"project-api/config"
 	"project-common/discovery"
 	"project-common/logs"
-	loginServiceV1 "project-user/pkg/service/login.service.v1"
+	"project-grpc/user/login"
 )
 
-var LoginServiceClient loginServiceV1.LoginServiceClient
+var LoginServiceClient login.LoginServiceClient
 
 func InitRpcUserClient() {
 	zap.L().Info("初始化rpc客户端")
@@ -30,6 +30,6 @@ func InitRpcUserClient() {
 		log.Fatalf("连接服务失败: %v", err)
 	}
 
-	LoginServiceClient = loginServiceV1.NewLoginServiceClient(conn)
+	LoginServiceClient = login.NewLoginServiceClient(conn)
 	zap.L().Info("rpc客户端初始化成功")
 }

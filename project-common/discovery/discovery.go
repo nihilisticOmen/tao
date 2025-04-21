@@ -40,11 +40,11 @@ func NewRegister(etcdAddrs []string, logger *zap.Logger) *Register {
 // Register a service
 func (r *Register) Register(srvInfo Server, ttl int64) (chan<- struct{}, error) {
 	var err error
-
+	//校验服务地址合法性（如IP格式）。
 	if strings.Split(srvInfo.Addr, ":")[0] == "" {
 		return nil, errors.New("invalid ip")
 	}
-
+	//创建etcd客户端连接。
 	if r.cli, err = clientv3.New(clientv3.Config{
 		Endpoints:   r.EtcdAddrs,
 		DialTimeout: time.Duration(r.DialTimeout) * time.Second,
@@ -54,15 +54,15 @@ func (r *Register) Register(srvInfo Server, ttl int64) (chan<- struct{}, error) 
 
 	r.srvInfo = srvInfo
 	r.srvTTL = ttl
-
+	//调用register()将服务信息写入etcd（带租约）。
 	if err = r.register(); err != nil {
 		return nil, err
 	}
 
 	r.closeCh = make(chan struct{})
-
+	//启动keepAlive()协程维持租约。
 	go r.keepAlive()
-
+	//返回一个closeCh通道，用于外部控制注销。
 	return r.closeCh, nil
 }
 
@@ -81,6 +81,7 @@ func (r *Register) register() error {
 		return err
 	}
 	r.leasesID = leaseResp.ID
+	//向etcd申请租约（TTL）。
 	if r.keepAliveCh, err = r.cli.KeepAlive(context.Background(), leaseResp.ID); err != nil {
 		return err
 	}
@@ -89,6 +90,8 @@ func (r *Register) register() error {
 	if err != nil {
 		return err
 	}
+	//将服务信息（JSON格式）写入etcd，绑定租约。
+	//路径格式：/<服务名>/<版本>/<地址>（通过BuildRegPath生成）。
 	_, err = r.cli.Put(context.Background(), BuildRegPath(r.srvInfo), string(data), clientv3.WithLease(r.leasesID))
 	return err
 }
@@ -99,7 +102,10 @@ func (r *Register) unregister() error {
 	return err
 }
 
-// keepAlive
+// keepAlive监听两个事件：
+// 租约续约响应,若失败则重新注册。
+// 定时器：定期检查租约状态，异常时重新注册。
+// 收到closeCh信号时，调用unregister()删除etcd中的服务信息。
 func (r *Register) keepAlive() {
 	ticker := time.NewTicker(time.Duration(r.srvTTL) * time.Second)
 	for {
@@ -129,8 +135,9 @@ func (r *Register) keepAlive() {
 }
 
 // UpdateHandler return http handler
+// 提供HTTP接口动态更新服务权重（如负载均衡调整）。
 func (r *Register) UpdateHandler() http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+	return func(w http.ResponseWriter, req *http.Request) {
 		wi := req.URL.Query().Get("weight")
 		weight, err := strconv.Atoi(wi)
 		if err != nil {
@@ -155,9 +162,10 @@ func (r *Register) UpdateHandler() http.HandlerFunc {
 			return
 		}
 		w.Write([]byte("update server weight success"))
-	})
+	}
 }
 
+// GetServerInfo 从etcd查询当前服务的注册信息。
 func (r *Register) GetServerInfo() (Server, error) {
 	resp, err := r.cli.Get(context.Background(), BuildRegPath(r.srvInfo))
 	if err != nil {

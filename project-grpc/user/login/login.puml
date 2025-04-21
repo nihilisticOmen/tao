@@ -1,5 +1,5 @@
 @startuml
-namespace login_service_v1 {
+namespace login {
     class CaptchaMessage << (S,Aquamarine) >> {
         - state protoimpl.MessageState
         - sizeCache protoimpl.SizeCache
@@ -30,26 +30,58 @@ namespace login_service_v1 {
         + GetCode() string
 
     }
-    class LoginService << (S,Aquamarine) >> {
-        + Cache repo.Cache
-
-        + GetCaptcha(ctx context.Context, msg *CaptchaMessage) (*CaptchaResponse, error)
-
-    }
     interface LoginServiceClient  {
         + GetCaptcha(ctx context.Context, in *CaptchaMessage, opts ...grpc.CallOption) (*CaptchaResponse, error)
+        + Register(ctx context.Context, in *RegisterMessage, opts ...grpc.CallOption) (*RegisterResponse, error)
 
     }
     interface LoginServiceServer  {
         - mustEmbedUnimplementedLoginServiceServer() 
 
         + GetCaptcha( context.Context,  *CaptchaMessage) (*CaptchaResponse, error)
+        + Register( context.Context,  *RegisterMessage) (*RegisterResponse, error)
+
+    }
+    class RegisterMessage << (S,Aquamarine) >> {
+        - state protoimpl.MessageState
+        - sizeCache protoimpl.SizeCache
+        - unknownFields protoimpl.UnknownFields
+
+        + Mobile string
+        + Name string
+        + Password string
+        + Captcha string
+        + Email string
+
+        + Reset() 
+        + String() string
+        + ProtoMessage() 
+        + ProtoReflect() protoreflect.Message
+        + Descriptor() ([]byte, []int)
+        + GetMobile() string
+        + GetName() string
+        + GetPassword() string
+        + GetCaptcha() string
+        + GetEmail() string
+
+    }
+    class RegisterResponse << (S,Aquamarine) >> {
+        - state protoimpl.MessageState
+        - sizeCache protoimpl.SizeCache
+        - unknownFields protoimpl.UnknownFields
+
+        + Reset() 
+        + String() string
+        + ProtoMessage() 
+        + ProtoReflect() protoreflect.Message
+        + Descriptor() ([]byte, []int)
 
     }
     class UnimplementedLoginServiceServer << (S,Aquamarine) >> {
         - mustEmbedUnimplementedLoginServiceServer() 
 
         + GetCaptcha( context.Context,  *CaptchaMessage) (*CaptchaResponse, error)
+        + Register( context.Context,  *RegisterMessage) (*RegisterResponse, error)
 
     }
     interface UnsafeLoginServiceServer  {
@@ -60,13 +92,13 @@ namespace login_service_v1 {
         - cc grpc.ClientConnInterface
 
         + GetCaptcha(ctx context.Context, in *CaptchaMessage, opts ...grpc.CallOption) (*CaptchaResponse, error)
+        + Register(ctx context.Context, in *RegisterMessage, opts ...grpc.CallOption) (*RegisterResponse, error)
 
     }
 }
-"login_service_v1.UnimplementedLoginServiceServer" *-- "login_service_v1.LoginService"
 
-"login_service_v1.LoginServiceServer" <|-- "login_service_v1.UnimplementedLoginServiceServer"
-"login_service_v1.UnsafeLoginServiceServer" <|-- "login_service_v1.UnimplementedLoginServiceServer"
-"login_service_v1.LoginServiceClient" <|-- "login_service_v1.loginServiceClient"
+"login.LoginServiceServer" <|-- "login.UnimplementedLoginServiceServer"
+"login.UnsafeLoginServiceServer" <|-- "login.UnimplementedLoginServiceServer"
+"login.LoginServiceClient" <|-- "login.loginServiceClient"
 
 @enduml
