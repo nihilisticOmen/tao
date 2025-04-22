@@ -4,9 +4,12 @@ import (
 	"context"
 	"go.uber.org/zap"
 	common "project-common"
+	"project-common/encrypts"
 	"project-common/errs"
 	"project-grpc/user/login"
 	"project-user/internal/dao"
+	"project-user/internal/data/member"
+	"project-user/internal/data/organization"
 	"project-user/internal/repo"
 	"project-user/pkg/model"
 	"time"
@@ -14,14 +17,16 @@ import (
 
 type LoginService struct {
 	login.UnimplementedLoginServiceServer
-	cache      repo.Cache
-	memberrepo repo.MemberRepo
+	cache            repo.Cache
+	memberrepo       repo.MemberRepo
+	organizationRepo repo.OrganizationRepo
 }
 
 func New() *LoginService {
 	return &LoginService{
-		cache:      dao.Rc,
-		memberrepo: dao.NewMemberDao(),
+		cache:            dao.Rc,
+		memberrepo:       dao.NewMemberDao(),
+		organizationRepo: dao.NewOrganizationDao(),
 	}
 }
 
@@ -85,8 +90,34 @@ func (ls *LoginService) Register(ctx context.Context, msg *login.RegisterMessage
 	if exist {
 		return nil, errs.GrpcError(model.MobileExist)
 	}
-
+	pwd := encrypts.Md5(msg.Password)
+	mem := &member.Member{
+		Account:       msg.Name,
+		Password:      pwd,
+		Name:          msg.Name,
+		Mobile:        msg.Mobile,
+		Email:         msg.Email,
+		CreateTime:    time.Now().UnixMilli(),
+		LastLoginTime: time.Now().UnixMilli(),
+		Status:        model.Normal,
+	}
+	if err := ls.memberrepo.SaveMember(ctx, mem); err != nil {
+		zap.L().Error("register save member db err", zap.Error(err))
+		return &login.RegisterResponse{}, err
+	}
 	//  4.执行业务，将数据存入member表，生成数据，存入组织表organization
+	org := &organization.Organization{
+		Name:       mem.Name + "个人组织",
+		MemberId:   mem.Id,
+		CreateTime: time.Now().UnixMilli(),
+		Personal:   model.Personal,
+		Avatar:     "https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fc-ssl.dtstatic.com%2Fuploads%2Fblog%2F202103%2F31%2F20210331160001_9a852.thumb.1000_0.jpg&refer=http%3A%2F%2Fc-ssl.dtstatic.com&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=auto?sec=1673017724&t=ced22fc74624e6940fd6a89a21d30cc5",
+	}
+	err = ls.organizationRepo.SaveOrganization(ctx, org)
+	if err != nil {
+		zap.L().Error("register SaveOrganization db err", zap.Error(err))
+		return &login.RegisterResponse{}, model.DBerror
+	}
 	//  5.返回
 	return nil, nil
 }

@@ -3,6 +3,7 @@ package gorms
 import (
 	"context"
 	"fmt"
+	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -19,6 +20,7 @@ func init() {
 	port := config.AppConf.MysqlConfig.Port         //数据库端口
 	Dbname := config.AppConf.MysqlConfig.Db         //数据库名
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8&parseTime=True&loc=Local", username, password, host, port, Dbname)
+	zap.L().Debug("mysql dsn", zap.String("dsn", dsn))
 	var err error
 	_db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),

@@ -25,10 +25,9 @@ func (m *MemberDao) FindMember(ctx context.Context, account string, pwd string) 
 	return mem, err
 }
 
-//func (m *MemberDao) SaveMember(conn database.DbConn, ctx context.Context, mem *member.Member) error {
-//	m.conn = conn.(*gorms.GormConn)
-//	return m.conn.Tx(ctx).Create(mem).Error
-//}
+func (m *MemberDao) SaveMember(ctx context.Context, mem *member.Member) error {
+	return m.conn.Session(ctx).Create(mem).Error
+}
 
 func (m *MemberDao) GetMemberByEmail(ctx context.Context, email string) (bool, error) {
 	var count int64
