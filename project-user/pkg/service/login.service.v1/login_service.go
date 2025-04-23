@@ -2,6 +2,8 @@ package login_service_v1
 
 import (
 	"context"
+	"errors"
+	"github.com/go-redis/redis/v8"
 	"go.uber.org/zap"
 	common "project-common"
 	"project-common/encrypts"
@@ -10,6 +12,8 @@ import (
 	"project-user/internal/dao"
 	"project-user/internal/data/member"
 	"project-user/internal/data/organization"
+	"project-user/internal/database"
+	"project-user/internal/database/tran"
 	"project-user/internal/repo"
 	"project-user/pkg/model"
 	"time"
@@ -20,6 +24,7 @@ type LoginService struct {
 	cache            repo.Cache
 	memberrepo       repo.MemberRepo
 	organizationRepo repo.OrganizationRepo
+	transaction      tran.Transaction
 }
 
 func New() *LoginService {
@@ -27,6 +32,7 @@ func New() *LoginService {
 		cache:            dao.Rc,
 		memberrepo:       dao.NewMemberDao(),
 		organizationRepo: dao.NewOrganizationDao(),
+		transaction:      dao.NewTransaction(),
 	}
 }
 
@@ -58,6 +64,9 @@ func (ls *LoginService) Register(ctx context.Context, msg *login.RegisterMessage
 	//  1.可以校验参数
 	//	2.校验验证码
 	redisCode, err := ls.cache.Get(ctx, model.RegisterRedisKey+msg.Mobile)
+	if errors.Is(err, redis.Nil) {
+		return nil, errs.GrpcError(model.CaptchaNotExist)
+	}
 	if err != nil {
 		zap.L().Error("获取验证码失败", zap.Error(err))
 		return nil, errs.GrpcError(model.RedisError)
@@ -101,11 +110,6 @@ func (ls *LoginService) Register(ctx context.Context, msg *login.RegisterMessage
 		LastLoginTime: time.Now().UnixMilli(),
 		Status:        model.Normal,
 	}
-	if err := ls.memberrepo.SaveMember(ctx, mem); err != nil {
-		zap.L().Error("register save member db err", zap.Error(err))
-		return &login.RegisterResponse{}, err
-	}
-	//  4.执行业务，将数据存入member表，生成数据，存入组织表organization
 	org := &organization.Organization{
 		Name:       mem.Name + "个人组织",
 		MemberId:   mem.Id,
@@ -113,11 +117,20 @@ func (ls *LoginService) Register(ctx context.Context, msg *login.RegisterMessage
 		Personal:   model.Personal,
 		Avatar:     "https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fc-ssl.dtstatic.com%2Fuploads%2Fblog%2F202103%2F31%2F20210331160001_9a852.thumb.1000_0.jpg&refer=http%3A%2F%2Fc-ssl.dtstatic.com&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=auto?sec=1673017724&t=ced22fc74624e6940fd6a89a21d30cc5",
 	}
-	err = ls.organizationRepo.SaveOrganization(ctx, org)
-	if err != nil {
-		zap.L().Error("register SaveOrganization db err", zap.Error(err))
-		return &login.RegisterResponse{}, model.DBerror
-	}
+	err = ls.transaction.Action(func(conn database.DbConn) error {
+		if err := ls.memberrepo.SaveMember(conn, ctx, mem); err != nil {
+			zap.L().Error("register save member db err", zap.Error(err))
+			return errs.GrpcError(model.DBerror)
+		}
+		//  4.执行业务，将数据存入member表，生成数据，存入组织表organization
+		err = ls.organizationRepo.SaveOrganization(conn, ctx, org)
+		if err != nil {
+			zap.L().Error("register SaveOrganization db err", zap.Error(err))
+			return errs.GrpcError(model.DBerror)
+		}
+		return nil
+	})
+
 	//  5.返回
-	return nil, nil
+	return &login.RegisterResponse{}, err
 }

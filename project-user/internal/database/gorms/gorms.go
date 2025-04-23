@@ -46,13 +46,13 @@ func New() *GormConn {
 	return &GormConn{db: GetDB()}
 }
 func NewTran() *GormConn {
-	return &GormConn{db: GetDB(), tx: GetDB()}
+	return &GormConn{db: GetDB(), tx: GetDB().Begin()}
 }
 func (g *GormConn) Session(ctx context.Context) *gorm.DB {
 	return g.db.Session(&gorm.Session{Context: ctx})
 }
 
-func (g *GormConn) Rollback() {
+func (g *GormConn) RoolBack() {
 	g.tx.Rollback()
 }
 func (g *GormConn) Commit() {

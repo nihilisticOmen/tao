@@ -1,0 +1,145 @@
+@startuml
+namespace dao {
+    class MemberDao << (S,Aquamarine) >> {
+        - conn *gorms.GormConn
+
+        + FindMember(ctx context.Context, account string, pwd string) (*member.Member, error)
+        + SaveMember(conn database.DbConn, ctx context.Context, mem *member.Member) error
+        + GetMemberByEmail(ctx context.Context, email string) (bool, error)
+        + GetMemberByAccount(ctx context.Context, account string) (bool, error)
+        + GetMemberByMobile(ctx context.Context, mobile string) (bool, error)
+
+    }
+    class OrganizationDao << (S,Aquamarine) >> {
+        - conn *gorms.GormConn
+
+        + FindOrganizationByMemId(ctx context.Context, memId int64) ([]organization.Organization, error)
+        + SaveOrganization(conn database.DbConn, ctx context.Context, org *organization.Organization) error
+
+    }
+    class RedisCache << (S,Aquamarine) >> {
+        - rdb *redis.Client
+
+        + Put(ctx context.Context, key string, value string, expire time.Duration) error
+        + Get(ctx context.Context, key string) (string, error)
+
+    }
+    class TransactionImpl << (S,Aquamarine) >> {
+        - conn database.DbConn
+
+        + Action(f <font color=blue>func</font>(database.DbConn) error) error
+
+    }
+}
+
+"repo.MemberRepo" <|-- "dao.MemberDao"
+"repo.OrganizationRepo" <|-- "dao.OrganizationDao"
+"repo.Cache" <|-- "dao.RedisCache"
+"tran.Transaction" <|-- "dao.TransactionImpl"
+
+namespace database {
+    interface DbConn  {
+        + RoolBack() 
+        + Commit() 
+
+    }
+}
+
+
+namespace gorms {
+    class GormConn << (S,Aquamarine) >> {
+        - db *gorm.DB
+        - tx *gorm.DB
+
+        + Begin() 
+        + Session(ctx context.Context) *gorm.DB
+        + RoolBack() 
+        + Commit() 
+        + Tx(ctx context.Context) *gorm.DB
+
+    }
+}
+
+"database.DbConn" <|-- "gorms.GormConn"
+
+namespace member {
+    class Member << (S,Aquamarine) >> {
+        + Id int64
+        + Account string
+        + Password string
+        + Name string
+        + Mobile string
+        + Realname string
+        + CreateTime int64
+        + Status int
+        + LastLoginTime int64
+        + Sex int
+        + Avatar string
+        + Idcard string
+        + Province int
+        + City int
+        + Area int
+        + Address string
+        + Description string
+        + Email string
+        + DingtalkOpenid string
+        + DingtalkUnionid string
+        + DingtalkUserid string
+
+        + TableName() string
+
+    }
+}
+
+
+namespace organization {
+    class Organization << (S,Aquamarine) >> {
+        + Id int64
+        + Name string
+        + Avatar string
+        + Description string
+        + MemberId int64
+        + CreateTime int64
+        + Personal int32
+        + Address string
+        + Province int32
+        + City int32
+        + Area int32
+
+        + TableName() string
+
+    }
+}
+
+
+namespace repo {
+    interface Cache  {
+        + Put(ctx context.Context, key string, value string, expire time.Duration) error
+        + Get(ctx context.Context, key string) (string, error)
+
+    }
+    interface MemberRepo  {
+        + GetMemberByEmail(ctx context.Context, email string) (bool, error)
+        + GetMemberByAccount(ctx context.Context, account string) (bool, error)
+        + GetMemberByMobile(ctx context.Context, mobile string) (bool, error)
+        + SaveMember(conn database.DbConn, ctx context.Context, mem *member.Member) error
+        + FindMember(ctx context.Context, account string, pwd string) (*member.Member, error)
+
+    }
+    interface OrganizationRepo  {
+        + FindOrganizationByMemId(ctx context.Context, memId int64) ([]organization.Organization, error)
+        + SaveOrganization(conn database.DbConn, ctx context.Context, org *organization.Organization) error
+
+    }
+}
+
+
+namespace tran {
+    interface Transaction  {
+        + Action( <font color=blue>func</font>(database.DbConn) error) error
+
+    }
+}
+
+
+@enduml

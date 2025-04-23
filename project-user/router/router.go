@@ -50,7 +50,8 @@ func RegisterGrpc() *grpc.Server {
 		Addr: config.AppConf.GC.Addr,
 		RegisterFunc: func(g *grpc.Server) {
 			login.RegisterLoginServiceServer(g, loginServiceV1.New())
-		}}
+		},
+	}
 	// 创建grpc服务
 	s := grpc.NewServer()
 	// 注册服务

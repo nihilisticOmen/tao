@@ -71,16 +71,18 @@ func (r *Register) Stop() {
 	r.closeCh <- struct{}{}
 }
 
-// register 注册节点
+// register 申请租约并写入服务信息
 func (r *Register) register() error {
 	leaseCtx, cancel := context.WithTimeout(context.Background(), time.Duration(r.DialTimeout)*time.Second)
 	defer cancel()
-
+	//通过cli.Grant方法获取租约响应
 	leaseResp, err := r.cli.Grant(leaseCtx, r.srvTTL)
 	if err != nil {
 		return err
 	}
+	//保存租约ID
 	r.leasesID = leaseResp.ID
+	zap.L().Info("租约获取成功", zap.Int64("lease_id", int64(leaseResp.ID)), zap.Int64("lease_ttl", leaseResp.TTL))
 	//向etcd申请租约（TTL）。
 	if r.keepAliveCh, err = r.cli.KeepAlive(context.Background(), leaseResp.ID); err != nil {
 		return err
