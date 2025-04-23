@@ -15,6 +15,7 @@ func NewTransaction() *TransactionImpl {
 	}
 }
 func (t TransactionImpl) Action(f func(conn database.DbConn) error) error {
+	t.conn.Begin()
 	err := f(t.conn)
 	if err != nil {
 		t.conn.RoolBack()
