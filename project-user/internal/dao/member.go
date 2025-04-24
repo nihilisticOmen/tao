@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"errors"
 	"gorm.io/gorm"
 	"project-user/internal/data/member"
 	"project-user/internal/database"
@@ -20,7 +21,7 @@ func (m *MemberDao) FindMember(ctx context.Context, account string, pwd string) 
 	var mem *member.Member
 	conn := gorms.New()
 	err := conn.Session(ctx).Where("account=? and password=?", account, pwd).First(&mem).Error
-	if err == gorm.ErrRecordNotFound {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
 	return mem, err
