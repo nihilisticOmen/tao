@@ -151,10 +151,14 @@ func (ls *LoginService) Login(ctx context.Context, msg *login.LoginMessage) (*lo
 	}
 	memMsg := &login.MemberMessage{}
 	err = copier.Copy(memMsg, mem)
+	memMsg.Code, _ = encrypts.EncryptInt64(mem.Id, model.AESKey)
 	//查询数据库,根据id查组织
 	orgs, err := ls.organizationRepo.FindOrganizationByMemId(c, mem.Id)
 	var orgsMessage []*login.OrganizationMessage
 	err = copier.Copy(&orgsMessage, orgs)
+	for _, v := range orgsMessage {
+		v.Code, _ = encrypts.EncryptInt64(v.Id, model.AESKey)
+	}
 	//使用jwt生成token
 	memIdStr := strconv.FormatInt(mem.Id, 10)
 	exp := time.Duration(config.AppConf.JwtConfig.AccessExp*3600*24) * time.Second
