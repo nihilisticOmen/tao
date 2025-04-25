@@ -52,13 +52,13 @@ services:
       --lower_case_table_names=1
     networks:
       - tao_net
+
+networks:
+  tao_net:
+    driver: bridge
 #  Project-User:
 #    container_name: project-user
 #    image: project-user:latest
 #    ports:
 #      - "8080:8080"
 #      - "8881:8881"
-
-networks:
-  tao_net:
-    driver: bridge

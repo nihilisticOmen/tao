@@ -6,4 +6,5 @@ use (
 	./project-user
 	./project-grpc
 	./test
+	./project-project
 )

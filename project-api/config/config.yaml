@@ -2,9 +2,9 @@ server:
   name: "project-api"
   addr: "127.0.0.1:80"
 zap:
-  debugFileName: "D:\\go\\project\\project_ws\\logs\\debug\\project-debug.log"
-  infoFileName: "D:\\go\\project\\project_ws\\logs\\info\\project-info.log"
-  warnFileName: "D:\\go\\project\\project_ws\\logs\\error\\project-error.log"
+  debugFileName: "..\\logs\\project-api\\debug\\project-debug.log"
+  infoFileName:  "..\\logs\\project-api\\info\\project-info.log"
+  warnFileName:  "..\\logs\\project-api\\error\\project-error.log"
   maxSize: 500,
   maxAge: 28,
   MaxBackups: 3

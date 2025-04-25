@@ -2,31 +2,40 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
+	"google.golang.org/grpc"
 )
 
+// Router 接口
 type Router interface {
-	Router(r *gin.Engine)
+	Route(r *gin.Engine)
 }
+
 type RegisterRouter struct {
 }
 
-func (*RegisterRouter) Router(ro Router, r *gin.Engine) {
-	ro.Router(r)
+func New() *RegisterRouter {
+	return &RegisterRouter{}
 }
 
-//func New() *RegisterRouter {
-//	return &RegisterRouter{}
-//}
+func (*RegisterRouter) Route(ro Router, r *gin.Engine) {
+	ro.Route(r)
+}
 
 var routers []Router
 
 func InitRouter(r *gin.Engine) {
 	//rg := New()
-	//rg.Router(&user.RouterUser{}, r)
+	//rg.Route(&user.RouterUser{}, r)
 	for _, ro := range routers {
-		ro.Router(r)
+		ro.Route(r)
 	}
 }
+
 func Register(ro ...Router) {
 	routers = append(routers, ro...)
+}
+
+type gRPCConfig struct {
+	Addr         string
+	RegisterFunc func(*grpc.Server)
 }

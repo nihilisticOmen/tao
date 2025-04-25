@@ -10,7 +10,7 @@ type BError struct {
 }
 
 func (e *BError) Error() string {
-	return fmt.Sprintf("code: %v, msg: %s", e.Code, e.Msg)
+	return fmt.Sprintf("code:%v,msg:%s", e.Code, e.Msg)
 }
 
 func NewError(code ErrorCode, msg string) *BError {

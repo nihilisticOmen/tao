@@ -1,0 +1,34 @@
+server:
+  name: "project-project"
+  addr: "127.0.0.1:8081"
+zap:
+  debugFileName: "..\\logs\\project-project\\debug\\project-debug.log"
+  infoFileName: "..\\logs\\project-project\\info\\project-info.log"
+  warnFileName: "..\\logs\\project-project\\error\\project-error.log"
+  maxSize: 500,
+  maxAge: 28,
+  MaxBackups: 3
+redis:
+  host: "localhost"
+  port: 6379
+  password: ""
+  db: 0
+grpc:
+  addr: "127.0.0.1:8881"
+  name: "project"
+  version: "1.0.0"
+  weight: 2
+etcd:
+  addrs:
+    - "127.0.0.1:2379"
+mysql:
+  username: root
+  password: 123456
+  host: 127.0.0.1
+  port: 3306
+  db: msproject
+jwt:
+  accessExp: 7
+  refreshExp: 14
+  accessSecret: msproject
+  refreshSecret: ms_project

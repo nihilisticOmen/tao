@@ -1,7 +1,6 @@
-package user
+package rpc
 
 import (
-	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/resolver"
@@ -15,21 +14,12 @@ import (
 var LoginServiceClient login.LoginServiceClient
 
 func InitRpcUserClient() {
-	zap.L().Info("初始化rpc客户端")
 	etcdRegister := discovery.NewResolver(config.AppConf.EtcdConfig.Addrs, logs.LG)
 	resolver.Register(etcdRegister)
 
-	// 使用NewClient方法替代DialContext
-	conn, err := grpc.NewClient(
-		"etcd:///user",
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithDefaultServiceConfig(`{"loadBalancingPolicy":"round_robin"}`),
-	)
-
+	conn, err := grpc.Dial("etcd:///user", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("连接服务失败: %v", err)
+		log.Fatalf("did not connect: %v", err)
 	}
-
 	LoginServiceClient = login.NewLoginServiceClient(conn)
-	zap.L().Info("rpc客户端初始化成功")
 }

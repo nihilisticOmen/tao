@@ -1,7 +1,6 @@
 package config
 
 import (
-	"github.com/go-redis/redis/v8"
 	"github.com/spf13/viper"
 	"log"
 	"os"
@@ -13,26 +12,8 @@ var AppConf = InitConfig()
 type Config struct {
 	viper      *viper.Viper
 	SC         *ServerConfig
+	GC         *GrpcConfig
 	EtcdConfig *EtcdConfig
-}
-
-func InitConfig() *Config {
-	v := viper.New()
-	conf := &Config{viper: v}
-	workDir, _ := os.Getwd()
-	conf.viper.SetConfigName("config")
-	conf.viper.SetConfigType("yaml")
-	conf.viper.AddConfigPath(workDir + "/config")
-
-	err := conf.viper.ReadInConfig()
-	if err != nil {
-		log.Fatalln(err)
-		return nil
-	}
-	conf.ReadServerConfig()
-	conf.InitZapLog()
-	conf.ReadEtcdConfig()
-	return conf
 }
 
 type ServerConfig struct {
@@ -40,11 +21,30 @@ type ServerConfig struct {
 	Addr string
 }
 
-func (c *Config) ReadServerConfig() {
-	sc := &ServerConfig{}
-	sc.Name = c.viper.GetString("server.name")
-	sc.Addr = c.viper.GetString("server.addr")
-	c.SC = sc
+type GrpcConfig struct {
+	Name string
+	Addr string
+}
+
+type EtcdConfig struct {
+	Addrs []string
+}
+
+func InitConfig() *Config {
+	conf := &Config{viper: viper.New()}
+	workDir, _ := os.Getwd()
+	conf.viper.SetConfigName("config")
+	conf.viper.SetConfigType("yaml")
+	conf.viper.AddConfigPath("/etc/ms_project/user")
+	conf.viper.AddConfigPath(workDir + "/config")
+	err := conf.viper.ReadInConfig()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	conf.ReadServerConfig()
+	conf.InitZapLog()
+	conf.ReadEtcdConfig()
+	return conf
 }
 
 func (c *Config) InitZapLog() {
@@ -63,16 +63,11 @@ func (c *Config) InitZapLog() {
 	}
 }
 
-func (c *Config) InitRedisOptions() *redis.Options {
-	return &redis.Options{
-		Addr:     c.viper.GetString("redis.host") + ":" + c.viper.GetString("redis.port"),
-		Password: c.viper.GetString("redis.password"), // no password set
-		DB:       c.viper.GetInt("db"),                // use default DB
-	}
-}
-
-type EtcdConfig struct {
-	Addrs []string
+func (c *Config) ReadServerConfig() {
+	sc := &ServerConfig{}
+	sc.Name = c.viper.GetString("server.name")
+	sc.Addr = c.viper.GetString("server.addr")
+	c.SC = sc
 }
 
 func (c *Config) ReadEtcdConfig() {

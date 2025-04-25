@@ -19,38 +19,55 @@ type Config struct {
 	JwtConfig   *JwtConfig
 }
 
-func InitConfig() *Config {
-	v := viper.New()
-	conf := &Config{viper: v}
-	workDir, _ := os.Getwd()
-	conf.viper.SetConfigName("config")
-	conf.viper.SetConfigType("yaml")
-	conf.viper.AddConfigPath(workDir + "/config")
-
-	err := conf.viper.ReadInConfig()
-	if err != nil {
-		log.Fatalln(err)
-		return nil
-	}
-	conf.ReadServerConfig()
-	conf.ReadGrpcConfig()
-	conf.InitZapLog()
-	conf.ReadEtcdConfig()
-	conf.InitMysqlConfig()
-	conf.InitJwtConfig()
-	return conf
-}
-
 type ServerConfig struct {
 	Name string
 	Addr string
 }
 
-func (c *Config) ReadServerConfig() {
-	sc := &ServerConfig{}
-	sc.Name = c.viper.GetString("server.name")
-	sc.Addr = c.viper.GetString("server.addr")
-	c.SC = sc
+type GrpcConfig struct {
+	Name    string
+	Addr    string
+	Version string
+	Weight  int64
+}
+
+type EtcdConfig struct {
+	Addrs []string
+}
+
+type MysqlConfig struct {
+	Username string
+	Password string
+	Host     string
+	Port     int
+	Db       string
+}
+
+type JwtConfig struct {
+	AccessExp     int64
+	RefreshExp    int64
+	AccessSecret  string
+	RefreshSecret string
+}
+
+func InitConfig() *Config {
+	conf := &Config{viper: viper.New()}
+	workDir, _ := os.Getwd()
+	conf.viper.SetConfigName("config")
+	conf.viper.SetConfigType("yaml")
+	conf.viper.AddConfigPath("/etc/ms_project/user")
+	conf.viper.AddConfigPath(workDir + "/config")
+	err := conf.viper.ReadInConfig()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	conf.ReadServerConfig()
+	conf.InitZapLog()
+	conf.ReadGrpcConfig()
+	conf.ReadEtcdConfig()
+	conf.InitMysqlConfig()
+	conf.InitJwtConfig()
+	return conf
 }
 
 func (c *Config) InitZapLog() {
@@ -69,19 +86,11 @@ func (c *Config) InitZapLog() {
 	}
 }
 
-func (c *Config) InitRedisOptions() *redis.Options {
-	return &redis.Options{
-		Addr:     c.viper.GetString("redis.host") + ":" + c.viper.GetString("redis.port"),
-		Password: c.viper.GetString("redis.password"), // no password set
-		DB:       c.viper.GetInt("db"),                // use default DB
-	}
-}
-
-type GrpcConfig struct {
-	Name    string
-	Addr    string
-	Version string
-	Weight  int64
+func (c *Config) ReadServerConfig() {
+	sc := &ServerConfig{}
+	sc.Name = c.viper.GetString("server.name")
+	sc.Addr = c.viper.GetString("server.addr")
+	c.SC = sc
 }
 
 func (c *Config) ReadGrpcConfig() {
@@ -93,8 +102,12 @@ func (c *Config) ReadGrpcConfig() {
 	c.GC = gc
 }
 
-type EtcdConfig struct {
-	Addrs []string
+func (c *Config) ReadRedisConfig() *redis.Options {
+	return &redis.Options{
+		Addr:     c.viper.GetString("redis.host") + ":" + c.viper.GetString("redis.port"),
+		Password: c.viper.GetString("redis.password"),
+		DB:       c.viper.GetInt("redis.db"),
+	}
 }
 
 func (c *Config) ReadEtcdConfig() {
@@ -107,15 +120,6 @@ func (c *Config) ReadEtcdConfig() {
 	ec.Addrs = addrs
 	c.EtcdConfig = ec
 }
-
-type MysqlConfig struct {
-	Username string
-	Password string
-	Host     string
-	Port     int
-	Db       string
-}
-
 func (c *Config) InitMysqlConfig() {
 	mc := &MysqlConfig{
 		Username: c.viper.GetString("mysql.username"),
@@ -126,19 +130,11 @@ func (c *Config) InitMysqlConfig() {
 	}
 	c.MysqlConfig = mc
 }
-
-type JwtConfig struct {
-	AccessExp     int
-	RefreshExp    int
-	AccessSecret  string
-	RefreshSecret string
-}
-
 func (c *Config) InitJwtConfig() {
 	mc := &JwtConfig{
 		AccessSecret:  c.viper.GetString("jwt.accessSecret"),
-		AccessExp:     c.viper.GetInt("jwt.accessExp"),
-		RefreshExp:    c.viper.GetInt("jwt.refreshExp"),
+		AccessExp:     c.viper.GetInt64("jwt.accessExp"),
+		RefreshExp:    c.viper.GetInt64("jwt.refreshExp"),
 		RefreshSecret: c.viper.GetString("jwt.refreshSecret"),
 	}
 	c.JwtConfig = mc

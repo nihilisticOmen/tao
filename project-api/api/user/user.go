@@ -4,8 +4,8 @@ import (
 	"context"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/copier"
-	"go.uber.org/zap"
 	"net/http"
+	"project-api/api/rpc"
 	"project-api/pkg/model/user"
 	common "project-common"
 	"project-common/errs"
@@ -19,57 +19,56 @@ type HandlerUser struct {
 func New() *HandlerUser {
 	return &HandlerUser{}
 }
+
 func (*HandlerUser) getCaptcha(ctx *gin.Context) {
 	result := &common.Result{}
-	//1.获取参数
-	//mobile := ctx.PostForm("mobile")
 	mobile := ctx.PostForm("mobile")
-	zap.L().Info("接收电话号码：" + mobile)
-	rsp, err := LoginServiceClient.GetCaptcha(context.Background(), &login.CaptchaMessage{Mobile: mobile})
+	c, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	rsp, err := rpc.LoginServiceClient.GetCaptcha(c, &login.CaptchaMessage{Mobile: mobile})
 	if err != nil {
-		grpcError, msg := errs.ParseGrpcError(err)
-		ctx.JSON(http.StatusOK, result.Fail(grpcError, msg))
+		code, msg := errs.ParseGrpcError(err)
+		ctx.JSON(http.StatusOK, result.Fail(code, msg))
 		return
 	}
 	ctx.JSON(http.StatusOK, result.Success(rsp.Code))
-	zap.L().Info("发送验证码成功")
 }
 
 func (u *HandlerUser) register(c *gin.Context) {
-	//	1.接收参数 参数模型
+	//1.接收参数 参数模型
 	result := &common.Result{}
 	var req user.RegisterReq
 	err := c.ShouldBind(&req)
 	if err != nil {
-		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "参数格式错误"))
+		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "参数格式有误"))
 		return
 	}
-	//	2.参数校验 判断参数是否合法
+	//2.校验参数 判断参数是否合法
 	if err := req.Verify(); err != nil {
 		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, err.Error()))
 		return
 	}
-	//	3.调用user grpc服务 获取响应
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	//3.调用user grpc服务 获取响应
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 	msg := &login.RegisterMessage{}
 	err = copier.Copy(msg, req)
 	if err != nil {
-		c.JSON(http.StatusOK, result.Fail(http.StatusInternalServerError, "参数转换失败"))
+		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "copy有误"))
 		return
 	}
-	_, err = LoginServiceClient.Register(ctx, msg)
+	_, err = rpc.LoginServiceClient.Register(ctx, msg)
 	if err != nil {
 		code, msg := errs.ParseGrpcError(err)
 		c.JSON(http.StatusOK, result.Fail(code, msg))
 		return
 	}
-	//  4.返回响应
-	c.JSON(http.StatusOK, result.Success("注册成功"))
+	//4.返回结果
+	c.JSON(http.StatusOK, result.Success(""))
 }
 
 func (u *HandlerUser) login(c *gin.Context) {
-	//接收参数，绑定模型
+	//1.接收参数 参数模型
 	result := &common.Result{}
 	var req user.LoginReq
 	err := c.ShouldBind(&req)
@@ -77,26 +76,46 @@ func (u *HandlerUser) login(c *gin.Context) {
 		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "参数格式有误"))
 		return
 	}
-	//	调用user grpc完成登录
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	//2.调用user grpc 完成登录
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 	msg := &login.LoginMessage{}
 	err = copier.Copy(msg, req)
 	if err != nil {
-		c.JSON(http.StatusOK, result.Fail(http.StatusInternalServerError, "参数转换失败"))
+		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "copy有误"))
 		return
 	}
-	loginResp, err := LoginServiceClient.Login(ctx, msg)
+	loginRsp, err := rpc.LoginServiceClient.Login(ctx, msg)
 	if err != nil {
 		code, msg := errs.ParseGrpcError(err)
 		c.JSON(http.StatusOK, result.Fail(code, msg))
 		return
 	}
 	rsp := &user.LoginRsp{}
-	err = copier.Copy(rsp, loginResp)
+	err = copier.Copy(rsp, loginRsp)
 	if err != nil {
 		c.JSON(http.StatusOK, result.Fail(http.StatusBadRequest, "copy有误"))
+		return
 	}
-	//  4.返回响应
+	//4.返回结果
 	c.JSON(http.StatusOK, result.Success(rsp))
+}
+
+func (u *HandlerUser) myOrgList(c *gin.Context) {
+	result := &common.Result{}
+	memberIdStr, _ := c.Get("memberId")
+	memberId := memberIdStr.(int64)
+	list, err2 := rpc.LoginServiceClient.MyOrgList(context.Background(), &login.UserMessage{MemId: memberId})
+	if err2 != nil {
+		code, msg := errs.ParseGrpcError(err2)
+		c.JSON(http.StatusOK, result.Fail(code, msg))
+		return
+	}
+	if list.OrganizationList == nil {
+		c.JSON(http.StatusOK, result.Success([]*user.OrganizationList{}))
+		return
+	}
+	var orgs []*user.OrganizationList
+	copier.Copy(&orgs, list.OrganizationList)
+	c.JSON(http.StatusOK, result.Success(orgs))
 }

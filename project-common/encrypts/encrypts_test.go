@@ -22,3 +22,7 @@ func TestEncrypt(t *testing.T) {
 	}
 	fmt.Printf("%s ==> %s\n", cipherByte, plainText)
 }
+func TestMd5(t *testing.T) {
+	pwd := Md5("123qwe")
+	fmt.Println(pwd)
+}

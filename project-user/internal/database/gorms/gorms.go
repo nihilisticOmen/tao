@@ -3,7 +3,6 @@ package gorms
 import (
 	"context"
 	"fmt"
-	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -20,7 +19,6 @@ func init() {
 	port := config.AppConf.MysqlConfig.Port         //数据库端口
 	Dbname := config.AppConf.MysqlConfig.Db         //数据库名
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8&parseTime=True&loc=Local", username, password, host, port, Dbname)
-	zap.L().Debug("mysql dsn", zap.String("dsn", dsn))
 	var err error
 	_db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
@@ -29,35 +27,37 @@ func init() {
 		panic("连接数据库失败, error=" + err.Error())
 	}
 }
+
 func GetDB() *gorm.DB {
 	return _db
 }
 
 type GormConn struct {
 	db *gorm.DB
+	tx *gorm.DB
 }
 
 func (g *GormConn) Begin() {
-	g.db = GetDB().Begin()
+	g.tx = GetDB().Begin()
 }
 
 func New() *GormConn {
 	return &GormConn{db: GetDB()}
 }
 func NewTran() *GormConn {
-	return &GormConn{db: GetDB().Begin()}
+	return &GormConn{db: GetDB(), tx: GetDB()}
 }
 func (g *GormConn) Session(ctx context.Context) *gorm.DB {
 	return g.db.Session(&gorm.Session{Context: ctx})
 }
 
-func (g *GormConn) RoolBack() {
-	g.db.Rollback()
+func (g *GormConn) Rollback() {
+	g.tx.Rollback()
 }
 func (g *GormConn) Commit() {
-	g.db.Commit()
+	g.tx.Commit()
 }
 
 func (g *GormConn) Tx(ctx context.Context) *gorm.DB {
-	return g.db.WithContext(ctx)
+	return g.tx.WithContext(ctx)
 }

@@ -9,12 +9,15 @@ import (
 
 func main() {
 	r := gin.Default()
+	//路由
+	router.InitRouter(r)
+	//grpc服务注册
 	gc := router.RegisterGrpc()
+	//grpc服务注册到etcd
+	router.RegisterEtcdServer()
+
 	stop := func() {
 		gc.Stop()
 	}
-	router.RegisterEtcdServer()
-	// Initialize the router
-	//router.InitRouter(r)
 	srv.Run(r, config.AppConf.SC.Name, config.AppConf.SC.Addr, stop)
 }

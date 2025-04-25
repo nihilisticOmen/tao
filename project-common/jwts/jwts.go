@@ -1,9 +1,9 @@
 package jwts
 
 import (
+	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
-	"log"
 	"time"
 )
 
@@ -14,34 +14,28 @@ type JwtToken struct {
 	RefreshExp   int64
 }
 
-func CreateToken(val string, exp time.Duration, secret string, rf time.Duration, rfSecret string) *JwtToken {
+func CreateToken(val string, exp time.Duration, secret string, refreshExp time.Duration, refreshSecret string) *JwtToken {
 	aExp := time.Now().Add(exp).Unix()
-	claims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"tokenKey": val,
-		"exp":      aExp,
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"token": val,
+		"exp":   aExp,
 	})
-	atoken, err := claims.SignedString([]byte(secret))
-	if err != nil {
-		log.Println(err)
-	}
-	rExp := time.Now().Add(rf).Unix()
-	refreshClaims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"key": val,
-		"exp": rExp,
+	aToken, _ := accessToken.SignedString([]byte(secret))
+	rExp := time.Now().Add(refreshExp).Unix()
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"token": val,
+		"exp":   aExp,
 	})
-	rToken, err := refreshClaims.SignedString([]byte(rfSecret))
-	if err != nil {
-		log.Println(err)
-	}
+	rToken, _ := refreshToken.SignedString([]byte(refreshSecret))
 	return &JwtToken{
-		AccessToken:  atoken,
-		RefreshToken: rToken,
 		AccessExp:    aExp,
+		AccessToken:  aToken,
 		RefreshExp:   rExp,
+		RefreshToken: rToken,
 	}
 }
 
-func ParseToken(tokenString string, secret string) {
+func ParseToken(tokenString string, secret string) (string, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -51,10 +45,17 @@ func ParseToken(tokenString string, secret string) {
 		// hmacSampleSecret is a []byte containing your secret, e.g. []byte("my_secret_key")
 		return []byte(secret), nil
 	})
-
+	if err != nil {
+		return "", err
+	}
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		fmt.Printf("%v \n", claims)
+		val := claims["token"].(string)
+		exp := int64(claims["exp"].(float64))
+		if exp <= time.Now().Unix() {
+			return "", errors.New("token过期了")
+		}
+		return val, nil
 	} else {
-		fmt.Println(err)
+		return "", err
 	}
 }

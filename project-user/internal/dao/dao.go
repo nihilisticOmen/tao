@@ -9,18 +9,19 @@ type TransactionImpl struct {
 	conn database.DbConn
 }
 
-func NewTransaction() *TransactionImpl {
-	return &TransactionImpl{
-		conn: gorms.NewTran(),
-	}
-}
-func (t TransactionImpl) Action(f func(conn database.DbConn) error) error {
+func (t *TransactionImpl) Action(f func(conn database.DbConn) error) error {
 	t.conn.Begin()
 	err := f(t.conn)
 	if err != nil {
-		t.conn.RoolBack()
+		t.conn.Rollback()
 		return err
 	}
 	t.conn.Commit()
 	return nil
+}
+
+func NewTransaction() *TransactionImpl {
+	return &TransactionImpl{
+		conn: gorms.NewTran(),
+	}
 }

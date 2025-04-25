@@ -4,4 +4,5 @@ var (
 	Normal         = 1
 	Personal int32 = 1
 )
-var AESKey = "qweqweasdqweasdqweasdasd" //24位
+
+var AESKey = "sdfgyrhgbxcdgryfhgywertd"
